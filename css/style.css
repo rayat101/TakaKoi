@@ -1,0 +1,263 @@
+/* CSS stylesheet */
+
+/* ---------- Color variables ---------- */
+:root {
+  --color-primary: #301B07;      /* Deep Brown - navbar, headings */
+  --color-background: #E4D2BE;   /* Warm Beige - page background */
+  --color-secondary: #16293F;    /* Deep Navy - secondary sections */
+  --color-accent: #DDA647;       /* Muted Gold - primary buttons */
+  --color-accent-secondary: #BF6900; /* Burnt Orange - warnings/highlights */
+  --color-surface: #F8F3EC;      /* Soft Off-White - cards, forms */
+
+  --color-success: #4F7A5A;
+  --color-warning: #B7791F;
+  --color-danger: #B84A4A;
+
+  --color-text: #301B07;
+  --color-text-light: #F8F3EC;
+
+  --border-radius: 8px;
+  --shadow-soft: 0 2px 6px rgba(48, 27, 7, 0.12);
+
+  --font-main: 'Inter', Arial, Helvetica, sans-serif;
+}
+
+/* ---------- Reset & base ---------- */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-main);
+  background-color: var(--color-background);
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+/* ---------- Headings ---------- */
+h1, h2, h3, h4 {
+  color: var(--color-primary);
+  margin-top: 0;
+  font-weight: 700;
+}
+
+h1 {
+  font-size: 26px;
+}
+
+h2 {
+  font-size: 20px;
+}
+
+h3 {
+  font-size: 18px;
+}
+
+p {
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+/* ---------- Links ---------- */
+a {
+  color: var(--color-secondary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Layout helpers ---------- */
+.page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.container {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+/* ---------- Logo ---------- */
+.logo-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.logo-wrapper img {
+  width: 260px;
+  height: auto;
+  margin-bottom: 8px;
+}
+
+.logo-text {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-secondary);
+}
+
+/* ---------- Cards / Panels ---------- */
+.card {
+  background-color: var(--color-surface);
+  border: 1px solid rgba(48, 27, 7, 0.1);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-soft);
+  padding: 32px;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-block;
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-main);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: var(--border-radius);
+  border: none;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: opacity 0.15s ease-in-out;
+}
+
+.btn:hover {
+  opacity: 0.9;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background-color: var(--color-accent);
+  color: var(--color-primary);
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-text-light);
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+/* ---------- Forms ---------- */
+.form-group {
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 6px;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+  width: 100%;
+  font-family: var(--font-main);
+  font-size: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(48, 27, 7, 0.25);
+  border-radius: var(--border-radius);
+  background-color: #ffffff;
+  color: var(--color-text);
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+/* ---------- Status messages ---------- */
+.message {
+  padding: 10px 14px;
+  border-radius: var(--border-radius);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.message-success {
+  background-color: rgba(79, 122, 90, 0.15);
+  color: var(--color-success);
+}
+
+.message-warning {
+  background-color: rgba(183, 121, 31, 0.15);
+  color: var(--color-warning);
+}
+
+.message-danger {
+  background-color: rgba(184, 74, 74, 0.15);
+  color: var(--color-danger);
+}
+
+/* ---------- Navigation (for future pages) ---------- */
+.navbar {
+  width: 100%;
+  background-color: var(--color-primary);
+  color: var(--color-text-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+}
+
+.navbar a {
+  color: var(--color-text-light);
+  margin-left: 20px;
+  font-size: 14px;
+}
+
+.navbar .nav-active {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* ---------- Utility ---------- */
+.text-center {
+  text-align: center;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}
+
+.small-text {
+  font-size: 13px;
+  color: var(--color-secondary);
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 480px) {
+  .card {
+    padding: 22px;
+  }
+
+  .logo-wrapper img {
+    width: 120px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+}
