@@ -102,7 +102,8 @@ if ($conn->connect_error) {
             <a href="#">Customers</a>
             <a href="admin_accounts.php">Accounts</a>
             <a href="#">Transactions</a>
-            <a href="#">Loans</a>
+            <a href="admin_loans.php">Loans</a>
+            <a href="admin_employees.php">Employees</a>
             <a href="#">Fraud Monitoring</a>
             <a href="#">Branches</a>
             <a href="#">Reports</a>
