@@ -90,9 +90,9 @@ if ($conn->connect_error) {
         </div>
         <div>
             <a href="customer_dashboard.php" class="nav-active">Dashboard</a>
-            <a href="#">Accounts</a>
-            <a href="#">Transactions</a>
-            <a href="#">Transfer</a>
+            <a href="accounts.php">Accounts</a>
+            <a href="transactions.php">Transactions</a>
+            <a href="transfer.php">Transfer</a>
             <a href="#">Loans</a>
             <a href="login.php">Logout</a>
         </div>

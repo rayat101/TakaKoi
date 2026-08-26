@@ -100,7 +100,7 @@ if ($conn->connect_error) {
         <div>
             <a href="admin_dashboard.php" class="nav-active">Dashboard</a>
             <a href="#">Customers</a>
-            <a href="#">Accounts</a>
+            <a href="admin_accounts.php">Accounts</a>
             <a href="#">Transactions</a>
             <a href="#">Loans</a>
             <a href="#">Fraud Monitoring</a>
