@@ -1,7 +1,4 @@
 <?php
-set_exception_handler(function($e) {
-    die("<b>Crash Report:</b> " . $e->getMessage() . " on line " . $e->getLine());
-});
 // accounts.php - Customer bank account management
 // Customer can view their bank accounts and open a new one.
 // New accounts are created with status 'Suspended' (an employee activates them later).
