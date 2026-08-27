@@ -93,7 +93,7 @@ if ($conn->connect_error) {
             <a href="accounts.php">Accounts</a>
             <a href="transactions.php">Transactions</a>
             <a href="transfer.php">Transfer</a>
-            <a href="#">Loans</a>
+            <a href="loans.php">Loans</a>
             <a href="login.php">Logout</a>
         </div>
     </nav>

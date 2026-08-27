@@ -101,11 +101,15 @@ if ($conn->connect_error) {
         </div>
         <div>
             <a href="admin_dashboard.php">Dashboard</a>
+            <a href="#">Customers</a>
             <a href="admin_accounts.php" class="nav-active">Accounts</a>
+            <a href="#">Transactions</a>
             <a href="admin_loans.php">Loans</a>
             <a href="admin_employees.php">Employees</a>
+            <a href="#">Fraud Monitoring</a>
             <a href="admin_branches.php">Branches</a>
-            <a href="login.php">Logout</a>
+            <a href="#">Reports</a>
+            <a href="employee_login.php">Logout</a>
         </div>
     </nav>
 

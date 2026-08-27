@@ -1,4 +1,7 @@
 <?php
+set_exception_handler(function($e) {
+    die("<b>Crash Report:</b> " . $e->getMessage() . " on line " . $e->getLine());
+});
 // accounts.php - Customer bank account management
 // Customer can view their bank accounts and open a new one.
 // New accounts are created with status 'Suspended' (an employee activates them later).
@@ -98,6 +101,9 @@ if ($conn->connect_error) {
          WHERE a.customer_id = ?
          ORDER BY a.opening_date DESC"
     );
+    if (!$stmt) {
+        die("Database Error: " . $conn->error);
+    }
     $stmt->bind_param("i", $customer_id);
     $stmt->execute();
     $result = $stmt->get_result();
