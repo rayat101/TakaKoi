@@ -106,9 +106,11 @@ if ($conn->connect_error) {
             <a href="#">Transactions</a>
             <a href="admin_loans.php">Loans</a>
             <a href="admin_employees.php">Employees</a>
-            <a href="#">Fraud Monitoring</a>
+            <a href="fraud_monitoring.php">Fraud Monitoring</a>
             <a href="admin_branches.php">Branches</a>
-            <a href="#">Reports</a>
+            <a href="closure_requests.php">Closures</a>
+            <a href="cheque_requests.php">Cheque Books</a>
+            <a href="reports.php">Reports</a>
             <a href="employee_login.php">Logout</a>
         </div>
     </nav>
