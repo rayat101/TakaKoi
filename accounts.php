@@ -140,6 +140,8 @@ if ($conn->connect_error) {
             <a href="transactions.php">Transactions</a>
             <a href="transfer.php">Transfer</a>
             <a href="loans.php">Loans</a>
+            <a href="cheque_book.php">Cheque Book</a>
+            <a href="closure_request.php">Close Account</a>
             <a href="login.php">Logout</a>
         </div>
     </nav>
