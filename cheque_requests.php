@@ -200,9 +200,9 @@ if ($conn->connect_error) {
         </div>
         <div>
             <a href="admin_dashboard.php">Dashboard</a>
-            <a href="#">Customers</a>
+            <a href="admin_customers.php">Customers</a>
             <a href="admin_accounts.php">Accounts</a>
-            <a href="#">Transactions</a>
+            <a href="admin_transactions.php">Transactions</a>
             <a href="admin_loans.php">Loans</a>
             <a href="admin_employees.php">Employees</a>
             <a href="fraud_monitoring.php">Fraud Monitoring</a>
