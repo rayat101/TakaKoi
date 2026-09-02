@@ -1,6 +1,10 @@
 <?php
-// loan_payment.php - Customer makes a payment towards an approved/active loan
-// Records the payment in the Loan_payment table.
+// loan_payment.php - Feature 3: customer makes a payment towards a loan
+// Rules:
+//   - Payment cannot be more than the remaining amount (no overpaying)
+//   - Partial payments are allowed and add up over time
+//   - When the total paid reaches the loan amount, the loan becomes 'Paid'
+//   - A loan that is already 'Paid' cannot accept any more payments
 
 session_start();
 
@@ -52,11 +56,19 @@ if ($conn->connect_error) {
             $errors[] = "Please choose a valid payment method.";
         }
 
-        // --- Make sure the loan belongs to this customer and can be paid ---
+        $loan      = null;
+        $remaining = 0;
+
+        // --- Load the loan with how much has already been paid ---
+        // The subquery adds up every previous payment for this loan.
         if (empty($errors)) {
 
             $stmt = $conn->prepare(
-                "SELECT status FROM Loan WHERE loan_id = ? AND customer_id = ?"
+                "SELECT l.loan_id, l.amount, l.status,
+                        (SELECT IFNULL(SUM(p.amount), 0)
+                         FROM Loan_payment p WHERE p.loan_id = l.loan_id) AS paid_so_far
+                 FROM Loan l
+                 WHERE l.loan_id = ? AND l.customer_id = ?"
             );
             $stmt->bind_param("ii", $loan_id, $customer_id);
             $stmt->execute();
@@ -65,47 +77,91 @@ if ($conn->connect_error) {
 
             if (!$loan) {
                 $errors[] = "That loan was not found.";
+            } elseif ($loan["status"] === "Paid") {
+                // Rule: a fully paid loan is closed for good
+                $errors[] = "Loan " . $loan_id . " is already fully paid. No more payments are accepted.";
             } elseif ($loan["status"] !== "Approved" && $loan["status"] !== "Active") {
                 $errors[] = "This loan is " . $loan["status"] . " and cannot accept payments.";
+            } else {
+                $remaining = (float) $loan["amount"] - (float) $loan["paid_so_far"];
             }
         }
 
+        // --- Rule: cannot pay more than what is left ---
+        if (empty($errors) && $amount > $remaining) {
+            $errors[] = "You are trying to pay Tk. " . number_format((float) $amount, 2) .
+                        " but only Tk. " . number_format($remaining, 2) .
+                        " is remaining on this loan. Please enter Tk. " .
+                        number_format($remaining, 2) . " or less.";
+        }
+
+        // ---------- Save the payment ----------
         if (empty($errors)) {
 
             $amount       = (float) $amount;
             $payment_date = date("Y-m-d");
 
-            $stmt = $conn->prepare(
-                "INSERT INTO Loan_payment (amount, payment_date, payment_method, loan_id)
-                 VALUES (?, ?, ?, ?)"
-            );
-            $stmt->bind_param("dssi", $amount, $payment_date, $payment_method, $loan_id);
+            // How much will be paid in total once this payment goes in
+            $new_total = (float) $loan["paid_so_far"] + $amount;
 
-            if ($stmt->execute()) {
-                $success_message = "Payment of Tk. " . number_format($amount, 2) . " recorded.";
+            // A transaction is used because the payment row and the loan status
+            // must both be saved together.
+            $conn->begin_transaction();
 
-                // Once a loan starts being repaid, mark it Active
-                $update = $conn->prepare(
-                    "UPDATE Loan SET status = 'Active' WHERE loan_id = ? AND status = 'Approved'"
+            try {
+                $stmt = $conn->prepare(
+                    "INSERT INTO Loan_payment (amount, payment_date, payment_method, loan_id)
+                     VALUES (?, ?, ?, ?)"
                 );
-                $update->bind_param("i", $loan_id);
-                $update->execute();
-                $update->close();
+                $stmt->bind_param("dssi", $amount, $payment_date, $payment_method, $loan_id);
+                $stmt->execute();
+                $stmt->close();
 
-            } else {
-                $errors[] = "Could not record the payment. Please try again.";
+                if ($new_total >= (float) $loan["amount"]) {
+
+                    // The loan is now fully repaid
+                    $stmt = $conn->prepare("UPDATE Loan SET status = 'Paid' WHERE loan_id = ?");
+                    $stmt->bind_param("i", $loan_id);
+                    $stmt->execute();
+                    $stmt->close();
+
+                    $success_message = "Payment of Tk. " . number_format($amount, 2) .
+                        " recorded. This loan is now fully PAID.";
+
+                } else {
+
+                    // Still money left - a loan that was only Approved now becomes Active
+                    $stmt = $conn->prepare(
+                        "UPDATE Loan SET status = 'Active' WHERE loan_id = ? AND status = 'Approved'"
+                    );
+                    $stmt->bind_param("i", $loan_id);
+                    $stmt->execute();
+                    $stmt->close();
+
+                    $left = (float) $loan["amount"] - $new_total;
+                    $success_message = "Payment of Tk. " . number_format($amount, 2) .
+                        " recorded. Tk. " . number_format($left, 2) . " is still remaining.";
+                }
+
+                $conn->commit();
+
+            } catch (Exception $e) {
+                $conn->rollback();
+                $errors[] = "Could not record the payment. Nothing was saved.";
             }
-
-            $stmt->close();
         }
     }
 
-    // ---------- Load payable loans ----------
+    // ---------- Load payable loans with their remaining amount ----------
     $stmt = $conn->prepare(
-        "SELECT loan_id, loan_type, amount, status
-         FROM Loan
-         WHERE customer_id = ? AND status IN ('Approved', 'Active')
-         ORDER BY loan_id"
+        "SELECT l.loan_id, l.loan_type, l.amount, l.status,
+                (SELECT IFNULL(SUM(p.amount), 0)
+                 FROM Loan_payment p WHERE p.loan_id = l.loan_id) AS paid_so_far,
+                l.amount - (SELECT IFNULL(SUM(p.amount), 0)
+                            FROM Loan_payment p WHERE p.loan_id = l.loan_id) AS remaining
+         FROM Loan l
+         WHERE l.customer_id = ? AND l.status IN ('Approved', 'Active')
+         ORDER BY l.loan_id"
     );
     $stmt->bind_param("i", $customer_id);
     $stmt->execute();
@@ -115,9 +171,9 @@ if ($conn->connect_error) {
     }
     $stmt->close();
 
-    // ---------- Load payment history ----------
+    // ---------- Payment history ----------
     $stmt = $conn->prepare(
-        "SELECT p.*, l.loan_type
+        "SELECT p.*, l.loan_type, l.status AS loan_status
          FROM Loan_payment p
          JOIN Loan l ON p.loan_id = l.loan_id
          WHERE l.customer_id = ?
@@ -175,7 +231,7 @@ if ($conn->connect_error) {
 
         <div class="card mb-16">
             <?php if (empty($loans)) : ?>
-                <p>You have no approved loans to pay. <a href="loans.php">View my loans</a>.</p>
+                <p>You have no loans that need payment. <a href="loans.php">View my loans</a>.</p>
             <?php else : ?>
                 <form action="loan_payment.php" method="POST">
 
@@ -189,8 +245,8 @@ if ($conn->connect_error) {
                                     <?php if ((string) $loan["loan_id"] === (string) $selected_loan) echo "selected"; ?>>
                                     <?php
                                         echo htmlspecialchars(
-                                            $loan["loan_id"] . " - " . $loan["loan_type"] . " - Tk. " .
-                                            number_format($loan["amount"], 2) . " (" . $loan["status"] . ")"
+                                            $loan["loan_id"] . " - " . $loan["loan_type"] .
+                                            " - Remaining: Tk. " . number_format($loan["remaining"], 2)
                                         );
                                     ?>
                                 </option>
@@ -215,9 +271,45 @@ if ($conn->connect_error) {
                         </select>
                     </div>
 
+                    <p class="small-text mb-16">
+                        You can pay part of the loan at a time. You cannot pay more than
+                        the remaining amount. Once the full amount is paid, the loan is
+                        marked as Paid and no further payments are accepted.
+                    </p>
+
                     <button type="submit" class="btn btn-primary">Record Payment</button>
 
                 </form>
+            <?php endif; ?>
+        </div>
+
+        <h2 class="mb-16">Loan Balance</h2>
+        <div class="card mb-16">
+            <?php if (empty($loans)) : ?>
+                <p>No loans waiting for payment.</p>
+            <?php else : ?>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr style="text-align: left; border-bottom: 1px solid rgba(48,27,7,0.15);">
+                        <th style="padding: 8px 6px;">Loan ID</th>
+                        <th style="padding: 8px 6px;">Type</th>
+                        <th style="padding: 8px 6px;">Loan Amount</th>
+                        <th style="padding: 8px 6px;">Paid</th>
+                        <th style="padding: 8px 6px;">Remaining</th>
+                        <th style="padding: 8px 6px;">Status</th>
+                    </tr>
+                    <?php foreach ($loans as $loan) : ?>
+                        <tr style="border-bottom: 1px solid rgba(48,27,7,0.08);">
+                            <td style="padding: 8px 6px;"><?php echo htmlspecialchars($loan["loan_id"]); ?></td>
+                            <td style="padding: 8px 6px;"><?php echo htmlspecialchars($loan["loan_type"]); ?></td>
+                            <td style="padding: 8px 6px;">Tk. <?php echo number_format($loan["amount"], 2); ?></td>
+                            <td style="padding: 8px 6px;">Tk. <?php echo number_format($loan["paid_so_far"], 2); ?></td>
+                            <td style="padding: 8px 6px;">
+                                <strong>Tk. <?php echo number_format($loan["remaining"], 2); ?></strong>
+                            </td>
+                            <td style="padding: 8px 6px;"><?php echo htmlspecialchars($loan["status"]); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </table>
             <?php endif; ?>
         </div>
 
@@ -234,6 +326,7 @@ if ($conn->connect_error) {
                         <th style="padding: 8px 6px;">Amount</th>
                         <th style="padding: 8px 6px;">Method</th>
                         <th style="padding: 8px 6px;">Date</th>
+                        <th style="padding: 8px 6px;">Loan Status</th>
                     </tr>
                     <?php foreach ($payments as $p) : ?>
                         <tr style="border-bottom: 1px solid rgba(48,27,7,0.08);">
@@ -243,6 +336,18 @@ if ($conn->connect_error) {
                             <td style="padding: 8px 6px;">Tk. <?php echo number_format($p["amount"], 2); ?></td>
                             <td style="padding: 8px 6px;"><?php echo htmlspecialchars($p["payment_method"]); ?></td>
                             <td style="padding: 8px 6px;"><?php echo htmlspecialchars($p["payment_date"]); ?></td>
+                            <td style="padding: 8px 6px;">
+                                <?php
+                                    $ls = $p["loan_status"];
+                                    $ls_class = "message-warning";
+                                    if ($ls === "Paid")   $ls_class = "message-success";
+                                    if ($ls === "Active") $ls_class = "message-success";
+                                ?>
+                                <span class="message <?php echo $ls_class; ?>"
+                                      style="display:inline; padding: 2px 10px;">
+                                    <?php echo htmlspecialchars($ls); ?>
+                                </span>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </table>
